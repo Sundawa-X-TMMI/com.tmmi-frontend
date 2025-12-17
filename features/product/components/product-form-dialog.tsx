@@ -63,10 +63,9 @@ export const ProductFormDialog = ({
   const handleSubmit = (values: CreateFormValues | FormValues) => {
     onSubmit(values);
     setOpen(false);
-    // Reset form only if it's a create form
     if (!defaultValues) {
       form.reset({
-        merchantName: defaultValues?.merchantName || "",
+        merchantName: "",
         productName: "",
         price: "",
       });

@@ -33,7 +33,7 @@ export function MerchantProductTable({merchantId, merchantName}: MerchantProduct
     page: pagination.pageIndex + 1,
     itemPerPage: pagination.pageSize,
     sortBy: sorting[0]?.id ?? "createdAt",
-    direction: (sorting[0]?.desc ? QueryDirection.DESC : QueryDirection.ASC) as "ASC" | "DESC",
+    direction: sorting[0]?.desc ? QueryDirection.DESC : QueryDirection.ASC,
     search: merchantName,
   }), [pagination.pageIndex, pagination.pageSize, sorting, merchantName]);
 
@@ -48,7 +48,7 @@ export function MerchantProductTable({merchantId, merchantName}: MerchantProduct
     if (search) {
       return filteredProducts.filter((product) =>
         product.productName.toLowerCase().includes(search.toLowerCase()) ||
-        product.price.toLowerCase().includes(search.toLowerCase())
+        String(product.price).toLowerCase().includes(search.toLowerCase())
       );
     }
 

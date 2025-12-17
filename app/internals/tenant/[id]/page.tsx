@@ -8,23 +8,21 @@ import {Button} from "@/components/ui/button";
 import {ArrowLeft} from "lucide-react";
 import {useMemo} from "react";
 import {TenantTypes} from "@/types/features/tenant.type";
-import {Query} from "@/types/lib/query.type";
+import {Query, QueryDirection} from "@/types/lib/query.type";
 
 export default function Page() {
   const params = useParams();
   const router = useRouter();
   const tenantId = params.id as string;
 
-  // Fetch tenant data
   const {data: tenantData, isLoading} = useTenant({
     page: 1,
     itemPerPage: 100,
     sortBy: "createdAt",
-    direction: "DESC",
+    direction: QueryDirection.DESC,
     search: "",
   });
 
-  // ✅ GUNAKAN useMemo BUKAN useState + useEffect
   const tenantName = useMemo(() => {
     if (!tenantData?.data) return "";
 
@@ -33,7 +31,6 @@ export default function Page() {
     return tenant?.name || "";
   }, [tenantData, tenantId]);
 
-  // Loading state
   if (isLoading) {
     return (
       <Layout
