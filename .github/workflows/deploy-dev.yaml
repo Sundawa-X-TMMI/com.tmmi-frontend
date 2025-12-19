@@ -1,0 +1,50 @@
+name: Deploy to Development Server
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_DEV }}
+    # ITC
+      - name: Git Pull
+        run: |
+          ssh-keyscan -t rsa ${{ secrets.DEV_IP }} >> ~/.ssh/known_hosts
+          ssh ${{ secrets.DEV_USER }}@${{ secrets.DEV_IP }} "cd ~/apps/com.tmii-frontend && git pull origin main"
+          echo "Successfully pulled repo."
+
+      - name: Docker Down Container
+        run: |
+          ssh-keyscan -t rsa ${{ secrets.DEV_IP }} >> ~/.ssh/known_hosts
+          ssh ${{ secrets.DEV_USER }}@${{ secrets.DEV_IP }} "cd ~/apps/com.tmii-frontend && docker compose down"
+          echo "Successfully down the container."
+
+      - name: Docker Image Build
+        run: |
+          ssh-keyscan -t rsa ${{ secrets.DEV_IP }} >> ~/.ssh/known_hosts
+          ssh ${{ secrets.DEV_USER }}@${{ secrets.DEV_IP }} "cd ~/apps/com.tmii-frontend && docker compose build"
+          echo "Successfully build image."
+
+      - name: Docker Up the Container on Background
+        run: |
+          ssh-keyscan -t rsa ${{ secrets.DEV_IP }} >> ~/.ssh/known_hosts
+          ssh ${{ secrets.DEV_USER }}@${{ secrets.DEV_IP }} "cd ~/apps/com.tmii-frontend && docker compose up -d"
+          echo "Successfully deployed a services."
+
+      - name: Docker Clean Up
+        run: |
+          ssh-keyscan -t rsa ${{ secrets.DEV_IP }} >> ~/.ssh/known_hosts
+          ssh ${{ secrets.DEV_USER }}@${{ secrets.DEV_IP }} "docker system prune -af"
+          echo "Successfully clean up space."
+        
