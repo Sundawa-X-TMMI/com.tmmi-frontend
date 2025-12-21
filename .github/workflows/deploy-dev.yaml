@@ -21,7 +21,7 @@ jobs:
       - name: Git Pull
         run: |
           ssh-keyscan -t rsa ${{ secrets.DEV_IP }} >> ~/.ssh/known_hosts
-          ssh ${{ secrets.DEV_USER }}@${{ secrets.DEV_IP }} "cd ~/apps/com.tmii-frontend && git pull origin main"
+          ssh ${{ secrets.DEV_USER }}@${{ secrets.DEV_IP }} "cd ~/apps/com.tmii-frontend && git pull origin development"
           echo "Successfully pulled repo."
 
       - name: Docker Down Container
@@ -33,7 +33,7 @@ jobs:
       - name: Docker Image Build
         run: |
           ssh-keyscan -t rsa ${{ secrets.DEV_IP }} >> ~/.ssh/known_hosts
-          ssh ${{ secrets.DEV_USER }}@${{ secrets.DEV_IP }} "cd ~/apps/com.tmii-frontend && docker compose build"
+          ssh ${{ secrets.DEV_USER }}@${{ secrets.DEV_IP }} "cd ~/apps/com.tmii-frontend && docker compose build --no-cache"
           echo "Successfully build image."
 
       - name: Docker Up the Container on Background
@@ -46,5 +46,5 @@ jobs:
         run: |
           ssh-keyscan -t rsa ${{ secrets.DEV_IP }} >> ~/.ssh/known_hosts
           ssh ${{ secrets.DEV_USER }}@${{ secrets.DEV_IP }} "docker system prune -af"
-          echo "Successfully clean up space."
+          echo "Successfully cleaned up space."
         
