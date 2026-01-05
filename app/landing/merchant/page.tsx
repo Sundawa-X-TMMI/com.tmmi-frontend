@@ -2,6 +2,13 @@
 
 import React, { useState } from 'react';
 import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Mail, Printer, X, CheckCircle } from 'lucide-react';
+type Merchant = {
+  id: number;
+  name: string;
+  type: string;
+  status: string;
+};
+
 
 export default function MerchantTenant() {
   const [step, setStep] = useState('list'); // list, order, payment, success
@@ -10,7 +17,8 @@ export default function MerchantTenant() {
   const [showReceipt, setShowReceipt] = useState(false);
 
   const merchants = [
-    { id: 1, name: 'Solaria Merchant', type: 'Restaurant', status: 'kasir' }
+    { id: 1, name: 'Solaria Merchant', type: 'Restaurant', status: 'kasir' },
+    { id: 1, name: 'Chicken Merchant', type: 'Restaurant', status: 'kasir' }
   ];
 
   const menuItems = [
@@ -20,9 +28,9 @@ export default function MerchantTenant() {
   ];
 
   const [orderItems, setOrderItems] = useState([
-    { id: 1, name: 'Latte', price: 29000, qty: 1 },
-    { id: 2, name: 'Nasi Goreng', price: 35000, qty: 1 },
-    { id: 3, name: 'Kentang Goreng', price: 24000, qty: 1 }
+    { id: 1, name: 'Latte', price: 29000, qty: 0 },
+    { id: 2, name: 'Nasi Goreng', price: 35000, qty: 0 },
+    { id: 3, name: 'Kentang Goreng', price: 24000, qty: 0 }
   ]);
 
   const updateQty = (id, delta) => {
