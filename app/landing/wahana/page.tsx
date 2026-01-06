@@ -3,33 +3,40 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Plus, Minus, CheckCircle, Mail, Printer, X } from 'lucide-react';
 
-export default function WahanaAnjungan() {
-  const [activeTab, setActiveTab] = useState('wahana');
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [quantity, setQuantity] = useState(25);
-  const [step, setStep] = useState('list'); // list, detail, payment, success
-  const [showReceipt, setShowReceipt] = useState(false);
+type WahanaItem = {
+  id: number;
+  name: string;
+  image: string;
+  price: number;
+};
 
-  const wahanaItems = [
+export default function WahanaAnjungan() {
+  const [activeTab, setActiveTab] = useState<string>('wahana');
+  const [selectedItem, setSelectedItem] = useState<WahanaItem | null>(null);
+  const [quantity, setQuantity] = useState<number>(25);
+  const [step, setStep] = useState<string>('list');
+  const [showReceipt, setShowReceipt] = useState<boolean>(false);
+
+  const wahanaItems: WahanaItem[] = [
     { id: 1, name: 'Museum', image: '🏛️', price: 25000 },
     { id: 2, name: 'Rumah Ibadah', image: '🕌', price: 25000 },
     { id: 3, name: 'Wahana Rekreasi', image: '🎢', price: 25000 },
     { id: 4, name: 'Taman Mini Hijau', image: '🌳', price: 25000 }
   ];
 
-  const anjunganItems = [
+  const anjunganItems: WahanaItem[] = [
     { id: 1, name: 'Museum', image: '🏛️', price: 25000 },
     { id: 2, name: 'Rumah Ibadah', image: '🕌', price: 25000 }
   ];
 
   const items = activeTab === 'wahana' ? wahanaItems : anjunganItems;
 
-  const handleSelectItem = (item) => {
+  const handleSelectItem = (item: WahanaItem): void => {
     setSelectedItem(item);
     setStep('detail');
   };
 
-  const calculateTotal = () => {
+  const calculateTotal = (): { subtotal: number; admin: number; total: number } => {
     const subtotal = selectedItem ? selectedItem.price * quantity : 0;
     const admin = 2500;
     return { subtotal, admin, total: subtotal + admin };
@@ -37,12 +44,50 @@ export default function WahanaAnjungan() {
 
   const totals = calculateTotal();
 
+  const handleBackClick = (): void => {
+    if (step === 'list') {
+      window.history.back();
+    } else {
+      setStep('list');
+    }
+  };
+
+  const handleTabChange = (tab: string): void => {
+    setActiveTab(tab);
+  };
+
+  const handleQuantityDecrease = (): void => {
+    setQuantity(Math.max(1, quantity - 1));
+  };
+
+  const handleQuantityIncrease = (): void => {
+    setQuantity(quantity + 1);
+  };
+
+  const handlePayment = (): void => {
+    setStep('payment');
+  };
+
+  const handleSuccess = (): void => {
+    setStep('success');
+    setShowReceipt(true);
+  };
+
+  const handleCloseReceipt = (): void => {
+    setShowReceipt(false);
+    setStep('list');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
-          <button onClick={() => step === 'list' ? window.history.back() : setStep('list')} className="hover:bg-gray-100 p-2 rounded-lg mr-4">
+          <button
+            onClick={handleBackClick}
+            className="hover:bg-gray-100 p-2 rounded-lg mr-4"
+            type="button"
+          >
             <ArrowLeft className="w-6 h-6" />
           </button>
           <h1 className="text-xl font-bold">Wahana x Anjungan</h1>
@@ -56,22 +101,24 @@ export default function WahanaAnjungan() {
             {/* Tabs */}
             <div className="flex border-b mb-6">
               <button
-                onClick={() => setActiveTab('wahana')}
+                onClick={() => handleTabChange('wahana')}
                 className={`flex-1 pb-3 text-center font-medium transition ${
                   activeTab === 'wahana'
                     ? 'text-red-500 border-b-2 border-red-500'
                     : 'text-gray-500'
                 }`}
+                type="button"
               >
                 Wahana
               </button>
               <button
-                onClick={() => setActiveTab('anjungan')}
+                onClick={() => handleTabChange('anjungan')}
                 className={`flex-1 pb-3 text-center font-medium transition ${
                   activeTab === 'anjungan'
                     ? 'text-red-500 border-b-2 border-red-500'
                     : 'text-gray-500'
                 }`}
+                type="button"
               >
                 Anjungan
               </button>
@@ -84,6 +131,7 @@ export default function WahanaAnjungan() {
                   key={item.id}
                   onClick={() => handleSelectItem(item)}
                   className="bg-white rounded-2xl shadow-md hover:shadow-xl transition p-4"
+                  type="button"
                 >
                   <div className="aspect-square bg-gradient-to-br from-orange-100 to-red-100 rounded-xl mb-3 flex items-center justify-center text-6xl">
                     {item.image}
@@ -114,15 +162,17 @@ export default function WahanaAnjungan() {
                   </label>
                   <div className="flex items-center justify-center space-x-4 bg-gray-50 rounded-xl p-4">
                     <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      onClick={handleQuantityDecrease}
                       className="w-12 h-12 bg-white border border-gray-300 rounded-xl flex items-center justify-center hover:bg-gray-100"
+                      type="button"
                     >
                       <Minus className="w-5 h-5" />
                     </button>
                     <span className="text-3xl font-bold w-20 text-center">{quantity}</span>
                     <button
-                      onClick={() => setQuantity(quantity + 1)}
+                      onClick={handleQuantityIncrease}
                       className="w-12 h-12 bg-white border border-gray-300 rounded-xl flex items-center justify-center hover:bg-gray-100"
+                      type="button"
                     >
                       <Plus className="w-5 h-5" />
                     </button>
@@ -137,8 +187,9 @@ export default function WahanaAnjungan() {
                 </div>
 
                 <button
-                  onClick={() => setStep('payment')}
+                  onClick={handlePayment}
                   className="w-full bg-red-500 text-white py-4 rounded-xl font-bold hover:bg-red-600 transition"
+                  type="button"
                 >
                   Bayar
                 </button>
@@ -168,9 +219,10 @@ export default function WahanaAnjungan() {
               </div>
 
               <button
-                onClick={() => { setStep('success'); setShowReceipt(true); }}
+                onClick={handleSuccess}
                 className="bg-gray-100 text-gray-400 px-8 py-3 rounded-xl cursor-not-allowed"
                 disabled
+                type="button"
               >
                 Menunggu tap kartu...
               </button>
@@ -184,10 +236,17 @@ export default function WahanaAnjungan() {
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <button onClick={() => { setShowReceipt(false); setStep('list'); }} className="text-gray-500 hover:text-gray-700">
+                  <button
+                    onClick={handleCloseReceipt}
+                    className="text-gray-500 hover:text-gray-700"
+                    type="button"
+                  >
                     <X className="w-6 h-6" />
                   </button>
-                  <button className="text-gray-500 hover:text-gray-700">
+                  <button
+                    className="text-gray-500 hover:text-gray-700"
+                    type="button"
+                  >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                     </svg>
@@ -198,7 +257,7 @@ export default function WahanaAnjungan() {
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <CheckCircle className="w-10 h-10 text-green-500" />
                   </div>
-                  <h2 className="text-xl font-bold mb-2">Pmembelian Tiket Berhasil</h2>
+                  <h2 className="text-xl font-bold mb-2">Pembelian Tiket Berhasil</h2>
                   <p className="text-gray-600 text-sm">Transaksimu berhasil dilakukan.</p>
                 </div>
 
@@ -238,19 +297,26 @@ export default function WahanaAnjungan() {
                 </div>
 
                 <div className="flex space-x-3 mb-6">
-                  <button className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50">
+                  <button
+                    className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50"
+                    type="button"
+                  >
                     <Mail className="w-5 h-5" />
                     <span className="text-sm">Kirim ke Email</span>
                   </button>
-                  <button className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50">
+                  <button
+                    className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50"
+                    type="button"
+                  >
                     <Printer className="w-5 h-5" />
                     <span className="text-sm">Print Struk</span>
                   </button>
                 </div>
 
                 <button
-                  onClick={() => { setShowReceipt(false); setStep('list'); }}
+                  onClick={handleCloseReceipt}
                   className="w-full bg-red-500 text-white py-4 rounded-xl font-bold hover:bg-red-600"
+                  type="button"
                 >
                   Selesai
                 </button>
