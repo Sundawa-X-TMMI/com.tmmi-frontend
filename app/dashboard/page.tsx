@@ -1,226 +1,327 @@
 "use client";
 
+import React from "react";
 import { Layout } from "@/components/layouts/layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+  TrendingUp,
+  TrendingDown,
+  Users,
+  ShoppingCart,
+  Activity,
+  Timer,
+} from "lucide-react";
 
 export default function DashboardPage() {
-  // Data Line Chart
-  const pengunjungData = [
-    { name: "Senin", value: 3000 },
-    { name: "Selasa", value: 5000 },
-    { name: "Rabu", value: 4500 },
-    { name: "Kamis", value: 2500 },
-    { name: "Jumat", value: 22000 },
-    { name: "Sabtu", value: 15000 },
-    { name: "Minggu", value: 8000 },
+  // Data for pie charts
+  const anjunganData = [
+    { name: "Bali", value: 30, color: "#FF6B35" },
+    { name: "Maluku", value: 25, color: "#4ECDC4" },
+    { name: "NTB", value: 20, color: "#45B7D1" },
+    { name: "NTT", value: 15, color: "#96CEB4" },
+    { name: "Kalimantan Selatan", value: 10, color: "#FFEAA7" },
   ];
 
-  // Data Bar Chart
-  const revenueData = [
-    { name: "Senin", value: 250 },
-    { name: "Selasa", value: 320 },
-    { name: "Rabu", value: 180 },
-    { name: "Kamis", value: 280 },
-    { name: "Jumat", value: 200 },
-    { name: "Sabtu", value: 350 },
-    { name: "Minggu", value: 400 },
+  const wahanaData = [
+    { name: "Museum", value: 30, color: "#FF6B35" },
+    { name: "Kereta Gantung", value: 25, color: "#4ECDC4" },
+    { name: "Taman Burung", value: 20, color: "#45B7D1" },
+    { name: "Keong Mas", value: 15, color: "#96CEB4" },
+    { name: "Air Mancur", value: 10, color: "#FFEAA7" },
   ];
 
-  return (
-    <Layout breadcrumbs={[{ name: "Dashboard", target: "/dashboard" }]}>
-      <div className="flex-1 space-y-6 p-8">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+  const [hoveredSegment, setHoveredSegment] = React.useState<number | null>(
+    null
+  );
+
+  const renderDonutChart = (data: typeof anjunganData, chartId: string) => {
+    const total = data.reduce((sum, item) => sum + item.value, 0);
+    let currentAngle = 0;
+
+    return (
+      <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+        {/* Chart */}
+        <div className="relative w-[180px] h-[180px] md:w-[200px] md:h-[200px] flex-shrink-0">
+          <svg
+            viewBox="0 0 200 200"
+            className="w-full h-full transform -rotate-90"
+          >
+            {data.map((item, index) => {
+              const percentage = item.value / total;
+              const angle = percentage * 360;
+              const startAngle = currentAngle;
+              const endAngle = currentAngle + angle;
+
+              currentAngle = endAngle;
+
+              const startRad = (startAngle * Math.PI) / 180;
+              const endRad = (endAngle * Math.PI) / 180;
+
+              const x1 = 100 + 80 * Math.cos(startRad);
+              const y1 = 100 + 80 * Math.sin(startRad);
+              const x2 = 100 + 80 * Math.cos(endRad);
+              const y2 = 100 + 80 * Math.sin(endRad);
+
+              const largeArc = angle > 180 ? 1 : 0;
+
+              const pathData = [
+                `M 100 100`,
+                `L ${x1} ${y1}`,
+                `A 80 80 0 ${largeArc} 1 ${x2} ${y2}`,
+                `Z`,
+              ].join(" ");
+
+              const isHovered =
+                hoveredSegment === index + chartId.charCodeAt(0);
+
+              return (
+                <g key={index}>
+                  <path
+                    d={pathData}
+                    fill={item.color}
+                    className="transition-all duration-300 cursor-pointer"
+                    style={{
+                      opacity: hoveredSegment !== null && !isHovered ? 0.4 : 1,
+                      transform: isHovered ? "scale(1.05)" : "scale(1)",
+                      transformOrigin: "100px 100px",
+                    }}
+                    onMouseEnter={() =>
+                      setHoveredSegment(index + chartId.charCodeAt(0))
+                    }
+                    onMouseLeave={() => setHoveredSegment(null)}
+                    onTouchStart={() =>
+                      setHoveredSegment(index + chartId.charCodeAt(0))
+                    }
+                  />
+                </g>
+              );
+            })}
+            <circle cx="100" cy="100" r="50" fill="white" />
+          </svg>
+
+          {/* Center info */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            {hoveredSegment !== null &&
+            data[hoveredSegment - chartId.charCodeAt(0)] ? (
+              <div className="text-center animate-in fade-in zoom-in duration-200">
+                <div
+                  className="text-xl md:text-2xl font-bold mb-1"
+                  style={{
+                    color:
+                    data[hoveredSegment - chartId.charCodeAt(0)].color,
+                  }}
+                >
+                  {data[hoveredSegment - chartId.charCodeAt(0)].value}%
+                </div>
+                <div className="text-[9px] md:text-[10px] text-gray-600 max-w-[65px] md:max-w-[70px] leading-tight">
+                  {data[hoveredSegment - chartId.charCodeAt(0)].name}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center">
+                <div className="text-xs md:text-sm font-medium text-gray-400">
+                  Total
+                </div>
+                <div className="text-xl md:text-2xl font-bold text-gray-900">
+                  100%
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {/* Annual Pass */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Annual Pass
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">500.234</div>
-              <p className="text-xs text-green-600 flex items-center mt-2">
-                <ArrowUpRight className="mr-1 h-3 w-3" />
-                8.5% Dari Bulan Lalu
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Total Pengunjung Hari Ini */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Pengunjung Hari Ini
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">80.876</div>
-              <p className="text-xs text-green-600 flex items-center mt-2">
-                <ArrowUpRight className="mr-1 h-3 w-3" />
-                1.3% Dari Bulan Lalu
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Jumlah Event Berlangsung */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Jumlah Event Berlangsung
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">5</div>
-              <p className="text-xs text-red-600 flex items-center mt-2">
-                <ArrowDownRight className="mr-1 h-3 w-3" />
-                4.3% Dari Bulan Lalu
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Penjualan Tiket Hari Ini */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Penjualan Tiket Hari Ini
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">20.000</div>
-              <p className="text-xs text-red-600 flex items-center mt-2">
-                <ArrowDownRight className="mr-1 h-3 w-3" />
-                4.3% Dari Bulan Lalu
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* Jumlah Pengunjung Chart - Line Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-semibold">
-                Jumlah Pengunjung
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Per Hari</p>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart
-                  data={pengunjungData}
-                  margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: 12, fill: "#6b7280" }}
-                    tickLine={false}
-                    axisLine={{ stroke: "#e5e7eb" }}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12, fill: "#6b7280" }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => {
-                      if (value >= 1000) return `${value / 1000}k`;
-                      return value;
-                    }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                    formatter={(value: number) => [
-                      value.toLocaleString("id-ID"),
-                      "Pengunjung",
-                    ]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    dot={{ fill: "#3b82f6", r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                Rata-rata harian pengunjung: 2.500
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Total Revenue Chart - Bar Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-semibold">
-                Total Revenue
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Per Hari</p>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={revenueData}
-                  margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: 12, fill: "#6b7280" }}
-                    tickLine={false}
-                    axisLine={{ stroke: "#e5e7eb" }}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12, fill: "#6b7280" }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `${value}t`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                    formatter={(value: number) => [value, "Revenue"]}
-                  />
-                  <Bar
-                    dataKey="value"
-                    fill="#3b82f6"
-                    radius={[8, 8, 0, 0]}
-                    maxBarSize={50}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                Total Cabang: 8.000
-              </p>
-            </CardContent>
-          </Card>
+        {/* Legend - Responsive layout */}
+        <div className="w-full md:flex-1 grid grid-cols-2 gap-x-3 gap-y-2 md:gap-x-4">
+          {data.map((item, index) => {
+            const isHovered = hoveredSegment === index + chartId.charCodeAt(0);
+            return (
+              <div
+                key={index}
+                className={`flex items-center gap-1.5 md:gap-2 p-1.5 md:p-2 rounded transition-all duration-200 cursor-pointer ${
+                  isHovered ? "bg-gray-50" : ""
+                } ${hoveredSegment !== null && !isHovered ? "opacity-40" : ""}`}
+                onMouseEnter={() =>
+                  setHoveredSegment(index + chartId.charCodeAt(0))
+                }
+                onMouseLeave={() => setHoveredSegment(null)}
+                onTouchStart={() =>
+                  setHoveredSegment(index + chartId.charCodeAt(0))
+                }
+              >
+                <div
+                  className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: item.color }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] md:text-xs text-gray-600 truncate">
+                    {item.name}
+                  </div>
+                  <div
+                    className="text-xs md:text-sm font-bold"
+                    style={{ color: item.color }}
+                  >
+                    {item.value}%
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
+    );
+  };
+
+  return (
+    <Layout
+      breadcrumbs={[
+        {
+          name: "Dashboard",
+          target: "/dashboard",
+        },
+      ]}
+    >
+      <section className="flex flex-1 flex-col gap-3 md:gap-4 overflow-hidden p-4 md:p-8">
+        {/* Header */}
+        <div className="flex items-center justify-between space-y-2">
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight">
+              Dashboard
+            </h2>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          {/* Total Pengunjung */}
+          <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-3 md:p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] md:text-sm text-gray-600 mb-1 md:mb-2 truncate">
+                    Total Pengunjung
+                  </p>
+                  <h3 className="text-xl md:text-3xl font-bold text-gray-900 mb-1.5 md:mb-3">
+                    40,689
+                  </h3>
+                  <div className="flex items-center gap-0.5 md:gap-1 text-[9px] md:text-xs">
+                    <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-green-600 flex-shrink-0" />
+                    <span className="text-green-600 font-medium">8.5%</span>
+                    <span className="text-gray-500 truncate">sejak kemarin</span>
+                  </div>
+                </div>
+                <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 ml-2">
+                  <Users className="w-4 h-4 md:w-6 md:h-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Transaksi */}
+          <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-3 md:p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] md:text-sm text-gray-600 mb-1 md:mb-2 truncate">
+                    Total Transaksi
+                  </p>
+                  <h3 className="text-xl md:text-3xl font-bold text-gray-900 mb-1.5 md:mb-3">
+                    10,293
+                  </h3>
+                  <div className="flex items-center gap-0.5 md:gap-1 text-[9px] md:text-xs">
+                    <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-green-600 flex-shrink-0" />
+                    <span className="text-green-600 font-medium">1.3%</span>
+                    <span className="text-gray-500 truncate">minggu terakhir</span>
+                  </div>
+                </div>
+                <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0 ml-2">
+                  <ShoppingCart className="w-4 h-4 md:w-6 md:h-6 text-yellow-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Wahana Aktif */}
+          <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-3 md:p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] md:text-sm text-gray-600 mb-1 md:mb-2 truncate">
+                    Wahana Aktif
+                  </p>
+                  <h3 className="text-xl md:text-3xl font-bold text-gray-900 mb-1.5 md:mb-3">
+                    234
+                  </h3>
+                  <div className="flex items-center gap-0.5 md:gap-1 text-[9px] md:text-xs">
+                    <TrendingDown className="w-2.5 h-2.5 md:w-3 md:h-3 text-red-600 flex-shrink-0" />
+                    <span className="text-red-600 font-medium">4.3%</span>
+                    <span className="text-gray-500 truncate">bulan terakhir</span>
+                  </div>
+                </div>
+                <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 ml-2">
+                  <Activity className="w-4 h-4 md:w-6 md:h-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Anjungan Aktif */}
+          <Card className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-3 md:p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] md:text-sm text-gray-600 mb-1 md:mb-2 truncate">
+                    Anjungan Aktif
+                  </p>
+                  <h3 className="text-xl md:text-3xl font-bold text-gray-900 mb-1.5 md:mb-3">
+                    123
+                  </h3>
+                  <div className="flex items-center gap-0.5 md:gap-1 text-[9px] md:text-xs">
+                    <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-green-600 flex-shrink-0" />
+                    <span className="text-green-600 font-medium">1.8%</span>
+                    <span className="text-gray-500 truncate">bulan terakhir</span>
+                  </div>
+                </div>
+                <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 ml-2">
+                  <Timer className="w-4 h-4 md:w-6 md:h-6 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
+          {/* Data Kunjungan Anjungan */}
+          <Card className="bg-white border-0 shadow-sm">
+            <CardContent className="p-3 md:p-4">
+              <div className="mb-3 md:mb-4">
+                <h2 className="text-sm md:text-base font-semibold text-gray-900">
+                  Data Kunjungan Anjungan
+                </h2>
+                <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 md:mt-1">
+                  *Data per Sabtu, 12 Desember 2025
+                </p>
+              </div>
+              {renderDonutChart(anjunganData, "anjungan")}
+            </CardContent>
+          </Card>
+
+          {/* Data Kunjungan Wahana */}
+          <Card className="bg-white border-0 shadow-sm">
+            <CardContent className="p-3 md:p-4">
+              <div className="mb-3 md:mb-4">
+                <h2 className="text-sm md:text-base font-semibold text-gray-900">
+                  Data Kunjungan Wahana
+                </h2>
+                <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 md:mt-1">
+                  *Data per Sabtu, 12 Desember 2025
+                </p>
+              </div>
+              {renderDonutChart(wahanaData, "wahana")}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
     </Layout>
   );
 }
