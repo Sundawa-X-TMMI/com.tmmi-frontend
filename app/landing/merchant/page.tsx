@@ -2,44 +2,45 @@
 
 import React, { useState } from 'react';
 import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Mail, Printer, X, CheckCircle } from 'lucide-react';
+
 type Merchant = {
   id: number;
   name: string;
   type: string;
   status: string;
+  orders: { no: string; items: number }[];
 };
 
+type OrderItem = {
+  id: number;
+  name: string;
+  price: number;
+  qty: number;
+};
 
 export default function MerchantTenant() {
-  const [step, setStep] = useState('list'); // list, order, payment, success
-  const [selectedMerchant, setSelectedMerchant] = useState(null);
-  const [cart, setCart] = useState([]);
-  const [showReceipt, setShowReceipt] = useState(false);
+  const [step, setStep] = useState<string>('list');
+  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
+  const [showReceipt, setShowReceipt] = useState<boolean>(false);
 
-  const merchants = [
-    { id: 1, name: 'Solaria Merchant', type: 'Restaurant', status: 'kasir' },
-    { id: 1, name: 'Chicken Merchant', type: 'Restaurant', status: 'kasir' }
+  const merchants: Merchant[] = [
+    { id: 1, name: 'Solaria Merchant', type: 'Restaurant', status: 'kasir', orders: [{ no: '#12345', items: 3 }, { no: '#12346', items: 5 }] },
+    { id: 2, name: 'Chicken Merchant', type: 'Restaurant', status: 'kasir', orders: [{ no: '#12347', items: 4 }] }
   ];
 
-  const menuItems = [
-    { id: 1, name: 'Latte', price: 29000, image: '☕' },
-    { id: 2, name: 'Nasi Goreng', price: 35000, image: '🍚' },
-    { id: 3, name: 'Kentang Goreng', price: 24000, image: '🍟' }
-  ];
-
-  const [orderItems, setOrderItems] = useState([
-    { id: 1, name: 'Latte', price: 29000, qty: 0 },
-    { id: 2, name: 'Nasi Goreng', price: 35000, qty: 0 },
-    { id: 3, name: 'Kentang Goreng', price: 24000, qty: 0 }
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([
+    { id: 1, name: 'Latte', price: 29000, qty: 1 },
+    { id: 2, name: 'Nasi Goreng', price: 35000, qty: 1 },
+    { id: 3, name: 'Kentang Goreng', price: 24000, qty: 1 }
   ]);
 
-  const updateQty = (id, delta) => {
+  const updateQty = (id: number, delta: number): void => {
     setOrderItems(prev => prev.map(item =>
       item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item
     ));
   };
 
-  const calculateTotal = () => {
+  const calculateTotal = (): { subtotal: number; service: number; tax: number; total: number } => {
     const subtotal = orderItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const service = 12000;
     const tax = 12000;
@@ -48,21 +49,52 @@ export default function MerchantTenant() {
 
   const totals = calculateTotal();
 
+  const handleMerchantSelect = (merchant: Merchant): void => {
+    setSelectedMerchant(merchant);
+    setStep('order');
+  };
+
+  const handleBackClick = (): void => {
+    setStep('list');
+  };
+
+  const handleProcessOrder = (): void => {
+    setStep('payment');
+  };
+
+  const handlePaymentSuccess = (): void => {
+    setStep('success');
+    setShowReceipt(true);
+  };
+
+  const handleCloseReceipt = (): void => {
+    setShowReceipt(false);
+  };
+
+  const handleFinish = (): void => {
+    setShowReceipt(false);
+    setStep('list');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <button onClick={() => setStep('list')} className="hover:bg-gray-100 p-2 rounded-lg">
+            <button
+              onClick={handleBackClick}
+              className="hover:bg-gray-100 p-2 rounded-lg"
+              type="button"
+            >
               <ArrowLeft className="w-6 h-6" />
             </button>
             <div>
               <h1 className="text-xl font-bold">
                 {step === 'list' ? 'Merchant/Tenant' : 'Order #12345'}
               </h1>
-              {step !== 'list' && (
-                <p className="text-sm text-blue-500">Solaria Merchant</p>
+              {step !== 'list' && selectedMerchant && (
+                <p className="text-sm text-blue-500">{selectedMerchant.name}</p>
               )}
             </div>
           </div>
@@ -88,8 +120,9 @@ export default function MerchantTenant() {
               {merchants.map(merchant => (
                 <button
                   key={merchant.id}
-                  onClick={() => { setSelectedMerchant(merchant); setStep('order'); }}
+                  onClick={() => handleMerchantSelect(merchant)}
                   className="bg-white p-6 rounded-2xl shadow-md hover:shadow-xl transition text-left"
+                  type="button"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div>
@@ -100,15 +133,13 @@ export default function MerchantTenant() {
                       {merchant.status}
                     </span>
                   </div>
-                  <div className="flex space-x-2">
-                    <div className="bg-red-50 px-4 py-2 rounded-lg flex-1 text-center">
-                      <p className="text-sm text-gray-600">Order #12345</p>
-                      <p className="text-xs text-gray-500">3 items</p>
-                    </div>
-                    <div className="bg-red-50 px-4 py-2 rounded-lg flex-1 text-center">
-                      <p className="text-sm text-gray-600">Order #12345</p>
-                      <p className="text-xs text-gray-500">5 items</p>
-                    </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {merchant.orders.map((order, idx) => (
+                      <div key={idx} className="bg-red-50 px-3 py-2 rounded-lg text-center">
+                        <p className="text-xs text-gray-600">Order {order.no}</p>
+                        <p className="text-xs text-gray-500">{order.items} items</p>
+                      </div>
+                    ))}
                   </div>
                 </button>
               ))}
@@ -122,7 +153,7 @@ export default function MerchantTenant() {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold">Nomor Meja</h2>
-                <button className="text-red-500 text-sm">Dine in</button>
+                <button className="text-red-500 text-sm" type="button">Dine in</button>
               </div>
 
               <div className="mb-4">
@@ -151,6 +182,7 @@ export default function MerchantTenant() {
                     <button
                       onClick={() => updateQty(item.id, -1)}
                       className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-100"
+                      type="button"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
@@ -158,6 +190,7 @@ export default function MerchantTenant() {
                     <button
                       onClick={() => updateQty(item.id, 1)}
                       className="w-8 h-8 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-100"
+                      type="button"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -169,15 +202,38 @@ export default function MerchantTenant() {
               ))}
             </div>
 
+            <div className="mt-6 space-y-2 border-t pt-4">
+              <div className="flex justify-between text-gray-600">
+                <span>Subtotal</span>
+                <span>Rp {totals.subtotal.toLocaleString('id-ID')}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Service</span>
+                <span>Rp {totals.service.toLocaleString('id-ID')}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Pajak</span>
+                <span>Rp {totals.tax.toLocaleString('id-ID')}</span>
+              </div>
+              <div className="flex justify-between text-xl font-bold pt-2 border-t">
+                <span>TOTAL</span>
+                <span>Rp {totals.total.toLocaleString('id-ID')}</span>
+              </div>
+            </div>
+
             <button
-              onClick={() => setStep('payment')}
+              onClick={handleProcessOrder}
               className="w-full mt-6 bg-red-500 text-white py-4 rounded-xl font-bold hover:bg-red-600 transition"
+              type="button"
             >
               Proses Order
             </button>
 
             <div className="mt-4 flex space-x-2">
-              <button className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50">
+              <button
+                className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50"
+                type="button"
+              >
                 <ShoppingCart className="w-5 h-5" />
               </button>
             </div>
@@ -213,17 +269,22 @@ export default function MerchantTenant() {
             <div className="bg-white rounded-2xl shadow-lg p-4 mt-4">
               <div className="grid grid-cols-3 gap-2">
                 {[1,2,3,4,5,6,7,8,9].map(num => (
-                  <button key={num} className="py-4 text-xl font-semibold hover:bg-gray-100 rounded-xl">
+                  <button
+                    key={num}
+                    className="py-4 text-xl font-semibold hover:bg-gray-100 rounded-xl"
+                    type="button"
+                  >
                     {num}
                   </button>
                 ))}
-                <button className="py-4 text-xl hover:bg-gray-100 rounded-xl">* #</button>
-                <button className="py-4 text-xl font-semibold hover:bg-gray-100 rounded-xl">0</button>
-                <button className="py-4 text-xl hover:bg-gray-100 rounded-xl">+ .</button>
+                <button className="py-4 text-xl hover:bg-gray-100 rounded-xl" type="button">* #</button>
+                <button className="py-4 text-xl font-semibold hover:bg-gray-100 rounded-xl" type="button">0</button>
+                <button className="py-4 text-xl hover:bg-gray-100 rounded-xl" type="button">+ .</button>
               </div>
               <button
-                onClick={() => { setStep('success'); setShowReceipt(true); }}
+                onClick={handlePaymentSuccess}
                 className="w-full mt-4 bg-blue-500 text-white py-3 rounded-xl font-bold hover:bg-blue-600"
+                type="button"
               >
                 →
               </button>
@@ -237,10 +298,17 @@ export default function MerchantTenant() {
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <button onClick={() => setShowReceipt(false)} className="text-gray-500 hover:text-gray-700">
+                  <button
+                    onClick={handleCloseReceipt}
+                    className="text-gray-500 hover:text-gray-700"
+                    type="button"
+                  >
                     <X className="w-6 h-6" />
                   </button>
-                  <button className="text-gray-500 hover:text-gray-700">
+                  <button
+                    className="text-gray-500 hover:text-gray-700"
+                    type="button"
+                  >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                     </svg>
@@ -262,11 +330,11 @@ export default function MerchantTenant() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Nominal Bill</span>
-                    <span className="font-medium">Rp 112.000</span>
+                    <span className="font-medium">Rp {totals.total.toLocaleString('id-ID')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Transaksi</span>
-                    <span className="font-medium">Solaria Merchant</span>
+                    <span className="font-medium">{selectedMerchant?.name}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">ID Transaksi</span>
@@ -286,24 +354,31 @@ export default function MerchantTenant() {
                   </div>
                   <div className="flex justify-between pt-3 border-t">
                     <span className="font-bold">Total Pembayaran</span>
-                    <span className="font-bold">Rp 124.500</span>
+                    <span className="font-bold">Rp {(totals.total + 2500).toLocaleString('id-ID')}</span>
                   </div>
                 </div>
 
                 <div className="flex space-x-3 mb-6">
-                  <button className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50">
+                  <button
+                    className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50"
+                    type="button"
+                  >
                     <Mail className="w-5 h-5" />
                     <span className="text-sm">Kirim ke Email</span>
                   </button>
-                  <button className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50">
+                  <button
+                    className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50"
+                    type="button"
+                  >
                     <Printer className="w-5 h-5" />
                     <span className="text-sm">Print Struk</span>
                   </button>
                 </div>
 
                 <button
-                  onClick={() => { setShowReceipt(false); setStep('list'); }}
+                  onClick={handleFinish}
                   className="w-full bg-red-500 text-white py-4 rounded-xl font-bold hover:bg-red-600"
+                  type="button"
                 >
                   Selesai
                 </button>

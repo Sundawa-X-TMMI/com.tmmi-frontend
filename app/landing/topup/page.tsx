@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import { ArrowLeft, CheckCircle, Mail, Printer, X } from 'lucide-react';
 
 export default function TopUp() {
-  const [step, setStep] = useState('input'); // input, card, success
-  const [amount, setAmount] = useState('');
-  const [showReceipt, setShowReceipt] = useState(false);
+  const [step, setStep] = useState<string>('input');
+  const [amount, setAmount] = useState<string>('');
+  const [showReceipt, setShowReceipt] = useState<boolean>(false);
 
-  const handleNumberClick = (num) => {
+  const handleNumberClick = (num: string): void => {
     if (num === 'del') {
       setAmount(amount.slice(0, -1));
     } else {
@@ -16,9 +16,24 @@ export default function TopUp() {
     }
   };
 
-  const formatCurrency = (value) => {
+  const formatCurrency = (value: string): string => {
     if (!value) return 'Rp 0';
     return `Rp ${parseInt(value).toLocaleString('id-ID')}`;
+  };
+
+  const handleCardStep = (): void => {
+    setStep('card');
+  };
+
+  const handleSuccess = (): void => {
+    setStep('success');
+    setShowReceipt(true);
+  };
+
+  const handleCloseReceipt = (): void => {
+    setShowReceipt(false);
+    setStep('input');
+    setAmount('');
   };
 
   return (
@@ -26,7 +41,11 @@ export default function TopUp() {
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
-          <button onClick={() => window.history.back()} className="hover:bg-gray-100 p-2 rounded-lg mr-4">
+          <button
+            onClick={() => window.history.back()}
+            className="hover:bg-gray-100 p-2 rounded-lg mr-4"
+            type="button"
+          >
             <ArrowLeft className="w-6 h-6" />
           </button>
           <h1 className="text-xl font-bold">Top Up Saldo</h1>
@@ -51,6 +70,7 @@ export default function TopUp() {
                     key={num}
                     onClick={() => handleNumberClick(num.toString())}
                     className="aspect-square text-2xl font-semibold bg-gray-50 hover:bg-gray-100 rounded-xl transition"
+                    type="button"
                   >
                     {num}
                   </button>
@@ -58,23 +78,26 @@ export default function TopUp() {
                 <button
                   onClick={() => handleNumberClick('del')}
                   className="aspect-square text-xl bg-gray-50 hover:bg-gray-100 rounded-xl transition"
+                  type="button"
                 >
                   ←
                 </button>
                 <button
                   onClick={() => handleNumberClick('0')}
                   className="aspect-square text-2xl font-semibold bg-gray-50 hover:bg-gray-100 rounded-xl transition"
+                  type="button"
                 >
                   0
                 </button>
                 <button
-                  onClick={() => setStep('card')}
+                  onClick={handleCardStep}
                   disabled={!amount || parseInt(amount) === 0}
                   className={`aspect-square text-xl rounded-xl transition ${
                     amount && parseInt(amount) > 0
                       ? 'bg-blue-500 text-white hover:bg-blue-600'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   }`}
+                  type="button"
                 >
                   →
                 </button>
@@ -106,9 +129,10 @@ export default function TopUp() {
             </div>
 
             <button
-              onClick={() => { setStep('success'); setShowReceipt(true); }}
+              onClick={handleSuccess}
               className="bg-gray-100 text-gray-400 px-8 py-3 rounded-xl cursor-not-allowed"
               disabled
+              type="button"
             >
               Menunggu tap kartu...
             </button>
@@ -121,10 +145,17 @@ export default function TopUp() {
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <button onClick={() => { setShowReceipt(false); setStep('input'); setAmount(''); }} className="text-gray-500 hover:text-gray-700">
+                  <button
+                    onClick={handleCloseReceipt}
+                    className="text-gray-500 hover:text-gray-700"
+                    type="button"
+                  >
                     <X className="w-6 h-6" />
                   </button>
-                  <button className="text-gray-500 hover:text-gray-700">
+                  <button
+                    className="text-gray-500 hover:text-gray-700"
+                    type="button"
+                  >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                     </svg>
@@ -170,28 +201,35 @@ export default function TopUp() {
                   </div>
                   <div className="flex justify-between pt-3 border-t">
                     <span className="font-bold">Total Pembayaran</span>
-                    <span className="font-bold">Rp {(parseInt(amount || 0) + 2500).toLocaleString('id-ID')}</span>
+                    <span className="font-bold">Rp {(parseInt(amount || '0') + 2500).toLocaleString('id-ID')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-bold text-green-600">Sisa Saldo</span>
-                    <span className="font-bold text-green-600">Rp {(50000 + parseInt(amount || 0)).toLocaleString('id-ID')}</span>
+                    <span className="font-bold text-green-600">Rp {(50000 + parseInt(amount || '0')).toLocaleString('id-ID')}</span>
                   </div>
                 </div>
 
                 <div className="flex space-x-3 mb-6">
-                  <button className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50">
+                  <button
+                    className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50"
+                    type="button"
+                  >
                     <Mail className="w-5 h-5" />
                     <span className="text-sm">Kirim ke Email</span>
                   </button>
-                  <button className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50">
+                  <button
+                    className="flex-1 py-3 border border-gray-300 rounded-xl flex items-center justify-center space-x-2 hover:bg-gray-50"
+                    type="button"
+                  >
                     <Printer className="w-5 h-5" />
                     <span className="text-sm">Print Struk</span>
                   </button>
                 </div>
 
                 <button
-                  onClick={() => { setShowReceipt(false); setStep('input'); setAmount(''); }}
+                  onClick={handleCloseReceipt}
                   className="w-full bg-red-500 text-white py-4 rounded-xl font-bold hover:bg-red-600"
+                  type="button"
                 >
                   Selesai
                 </button>
