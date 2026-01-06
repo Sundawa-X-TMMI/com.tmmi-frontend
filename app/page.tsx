@@ -8,7 +8,7 @@ export default function Page() {
       breadcrumbs={[
         {
           name: "Dashboard",
-          target: "/",
+          target: "/dashboard",
         },
       ]}
     >

@@ -6,7 +6,7 @@ import {StoreProvider} from "@/providers/StoreProvider";
 
 export const metadata: Metadata = {
   title: "TMII",
-  description: "A system PPOB multi-tenant",
+  description: "TMII Information System",
 };
 
 export default function RootLayout({
