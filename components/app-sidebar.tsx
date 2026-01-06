@@ -54,7 +54,7 @@ const data = {
           url: "/internals/anjungan",
         },
         {
-          title: "Tenant",
+          title: "Tenant/Merchant",
           url: "/internals/tenant",
         },
         {
