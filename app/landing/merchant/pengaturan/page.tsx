@@ -1,21 +1,40 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Settings, Plus, CheckCircle, Upload, X } from 'lucide-react';
 
+type MenuOption = {
+  title: string;
+  description: string;
+  icon: string;
+};
+
+type CategoryForm = {
+  name: string;
+  status: string;
+};
+
+type ProductForm = {
+  name: string;
+  category: string;
+  price: string;
+  image: File | null;
+  status: string;
+};
+
 export default function MerchantSettings() {
-  const [step, setStep] = useState('main');
-  const [activeTab, setActiveTab] = useState('kategori');
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [step, setStep] = useState<string>('main');
+  const [activeTab, setActiveTab] = useState<string>('kategori');
+  const [showSuccess, setShowSuccess] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<string>('');
 
   // Form states
-  const [categoryForm, setCategoryForm] = useState({
+  const [categoryForm, setCategoryForm] = useState<CategoryForm>({
     name: '',
     status: ''
   });
 
-  const [productForm, setProductForm] = useState({
+  const [productForm, setProductForm] = useState<ProductForm>({
     name: '',
     category: '',
     price: '',
@@ -29,31 +48,81 @@ export default function MerchantSettings() {
     category: 'F&B'
   };
 
-  const menuOptions = [
-    { title: 'Merchant', description: 'Tambah dan kelola kategori serta produk yang dijual', icon: '🏪' },
+  const menuOptions: MenuOption[] = [
+    { title: 'Merchant', description: 'Tambah dan kelola kategori serta produk yang dijual', icon: '🪙' },
     { title: 'Ketentuan & Privasi', description: 'Cek ketentuan penggunaan dan perlindungan data', icon: '🔒' },
     { title: 'Pusat Bantuan', description: 'Temukan solusi untuk kebutuhanmu', icon: '❓' }
   ];
 
-  const handleCategorySubmit = () => {
+  // FIXED: Cleanup timeout on unmount
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    if (showSuccess) {
+      timeoutId = setTimeout(() => {
+        setShowSuccess(false);
+        setStep('main');
+        setCategoryForm({ name: '', status: '' });
+        setProductForm({ name: '', category: '', price: '', image: null, status: '' });
+      }, 2000);
+    }
+
+    // Cleanup function
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [showSuccess]);
+
+  const handleCategorySubmit = useCallback(() => {
+    if (!categoryForm.name || !categoryForm.status) {
+      return;
+    }
+
     setSuccessMessage('Tambah kategori berhasil!');
     setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      setStep('main');
-      setCategoryForm({ name: '', status: '' });
-    }, 2000);
-  };
+  }, [categoryForm]);
 
-  const handleProductSubmit = () => {
+  const handleProductSubmit = useCallback(() => {
+    if (!productForm.name || !productForm.category || !productForm.price || !productForm.status) {
+      return;
+    }
+
     setSuccessMessage('Tambah produk berhasil!');
     setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
+  }, [productForm]);
+
+  const handleBack = useCallback(() => {
+    if (step === 'main') {
+      window.history.back();
+    } else {
       setStep('main');
-      setProductForm({ name: '', category: '', price: '', image: null, status: '' });
-    }, 2000);
-  };
+    }
+  }, [step]);
+
+  const handleMenuClick = useCallback((title: string) => {
+    if (title === 'Merchant') {
+      setStep('add-category');
+    }
+  }, []);
+
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    if (tab === 'kategori') {
+      setStep('add-category');
+    } else {
+      setStep('add-product');
+    }
+  }, []);
+
+  const updateCategoryForm = useCallback((field: keyof CategoryForm, value: string) => {
+    setCategoryForm(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const updateProductForm = useCallback((field: keyof ProductForm, value: string | File | null) => {
+    setProductForm(prev => ({ ...prev, [field]: value }));
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -61,8 +130,9 @@ export default function MerchantSettings() {
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center">
           <button
-            onClick={() => step === 'main' ? window.history.back() : setStep('main')}
+            onClick={handleBack}
             className="hover:bg-gray-100 p-2 rounded-lg mr-4"
+            type="button"
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
@@ -87,7 +157,7 @@ export default function MerchantSettings() {
                   <p className="text-sm text-gray-500">ID: {merchantInfo.id}</p>
                   <p className="text-sm text-gray-500">Category: {merchantInfo.category}</p>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600">
+                <button className="text-gray-400 hover:text-gray-600" type="button">
                   <Settings className="w-5 h-5" />
                 </button>
               </div>
@@ -98,8 +168,9 @@ export default function MerchantSettings() {
               {menuOptions.map((option, index) => (
                 <button
                   key={index}
-                  onClick={() => option.title === 'Merchant' && setStep('add-category')}
+                  onClick={() => handleMenuClick(option.title)}
                   className="w-full bg-white rounded-2xl shadow-md p-5 flex items-center space-x-4 hover:shadow-lg transition text-left"
+                  type="button"
                 >
                   <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-2xl">
                     {option.icon}
@@ -119,7 +190,10 @@ export default function MerchantSettings() {
               <p className="text-gray-500 text-sm">Versi 1.0</p>
             </div>
 
-            <button className="w-full mt-6 bg-orange-100 text-orange-600 py-4 rounded-xl font-bold hover:bg-orange-200 transition">
+            <button
+              className="w-full mt-6 bg-orange-100 text-orange-600 py-4 rounded-xl font-bold hover:bg-orange-200 transition"
+              type="button"
+            >
               Keluar
             </button>
           </div>
@@ -131,22 +205,24 @@ export default function MerchantSettings() {
             {/* Tabs */}
             <div className="flex border-b">
               <button
-                onClick={() => { setStep('add-category'); setActiveTab('kategori'); }}
+                onClick={() => handleTabChange('kategori')}
                 className={`flex-1 py-4 text-center font-medium transition ${
                   activeTab === 'kategori'
                     ? 'text-red-500 border-b-2 border-red-500'
                     : 'text-gray-500'
                 }`}
+                type="button"
               >
                 Kategori
               </button>
               <button
-                onClick={() => { setStep('add-product'); setActiveTab('produk'); }}
+                onClick={() => handleTabChange('produk')}
                 className={`flex-1 py-4 text-center font-medium transition ${
                   activeTab === 'produk'
                     ? 'text-red-500 border-b-2 border-red-500'
                     : 'text-gray-500'
                 }`}
+                type="button"
               >
                 Produk
               </button>
@@ -168,7 +244,7 @@ export default function MerchantSettings() {
                       type="text"
                       placeholder="Pilih kategori"
                       value={categoryForm.name}
-                      onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})}
+                      onChange={(e) => updateCategoryForm('name', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                     />
                   </div>
@@ -179,7 +255,7 @@ export default function MerchantSettings() {
                     </label>
                     <select
                       value={categoryForm.status}
-                      onChange={(e) => setCategoryForm({...categoryForm, status: e.target.value})}
+                      onChange={(e) => updateCategoryForm('status', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
                       <option value="">Pilih status</option>
@@ -196,6 +272,7 @@ export default function MerchantSettings() {
                         ? 'bg-red-500 text-white hover:bg-red-600'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
+                    type="button"
                   >
                     Simpan
                   </button>
@@ -206,7 +283,7 @@ export default function MerchantSettings() {
               {step === 'add-product' && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-bold mb-4">Tambah Kategori</h3>
+                    <h3 className="text-lg font-bold mb-4">Tambah Produk</h3>
                   </div>
 
                   <div>
@@ -217,7 +294,7 @@ export default function MerchantSettings() {
                       type="text"
                       placeholder="Nama produk"
                       value={productForm.name}
-                      onChange={(e) => setProductForm({...productForm, name: e.target.value})}
+                      onChange={(e) => updateProductForm('name', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                     />
                   </div>
@@ -228,7 +305,7 @@ export default function MerchantSettings() {
                     </label>
                     <select
                       value={productForm.category}
-                      onChange={(e) => setProductForm({...productForm, category: e.target.value})}
+                      onChange={(e) => updateProductForm('category', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
                       <option value="">Pilih kategori</option>
@@ -246,7 +323,7 @@ export default function MerchantSettings() {
                       type="text"
                       placeholder="Rp 5xxx"
                       value={productForm.price}
-                      onChange={(e) => setProductForm({...productForm, price: e.target.value})}
+                      onChange={(e) => updateProductForm('price', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                     />
                   </div>
@@ -259,12 +336,27 @@ export default function MerchantSettings() {
                       <input
                         type="text"
                         placeholder="max 2mb"
+                        readOnly
+                        value={productForm.image?.name || ''}
                         className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                       />
-                      <button className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition flex items-center space-x-2">
+                      <label className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition flex items-center space-x-2 cursor-pointer">
                         <Upload className="w-4 h-4" />
                         <span>Upload</span>
-                      </button>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            if (file && file.size > 2 * 1024 * 1024) {
+                              alert('File size must be less than 2MB');
+                              return;
+                            }
+                            updateProductForm('image', file);
+                          }}
+                        />
+                      </label>
                     </div>
                   </div>
 
@@ -274,7 +366,7 @@ export default function MerchantSettings() {
                     </label>
                     <select
                       value={productForm.status}
-                      onChange={(e) => setProductForm({...productForm, status: e.target.value})}
+                      onChange={(e) => updateProductForm('status', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
                       <option value="">Pilih status</option>
@@ -291,6 +383,7 @@ export default function MerchantSettings() {
                         ? 'bg-red-500 text-white hover:bg-red-600'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
+                    type="button"
                   >
                     Simpan
                   </button>
@@ -308,7 +401,9 @@ export default function MerchantSettings() {
                 <CheckCircle className="w-12 h-12 text-green-500" />
               </div>
               <h2 className="text-2xl font-bold mb-2">{successMessage}</h2>
-              <p className="text-gray-600 text-sm">Kategori berhasil disimpan</p>
+              <p className="text-gray-600 text-sm">
+                {activeTab === 'kategori' ? 'Kategori' : 'Produk'} berhasil disimpan
+              </p>
             </div>
           </div>
         )}

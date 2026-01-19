@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import { Layout } from "@/components/layouts/layout";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -12,9 +12,17 @@ import {
   Timer,
 } from "lucide-react";
 
+type ChartDataItem = {
+  name: string;
+  value: number;
+  color: string;
+};
+
+type ChartId = "anjungan" | "wahana";
+
 export default function DashboardPage() {
   // Data for pie charts
-  const anjunganData = [
+  const anjunganData: ChartDataItem[] = [
     { name: "Bali", value: 30, color: "#FF6B35" },
     { name: "Maluku", value: 25, color: "#4ECDC4" },
     { name: "NTB", value: 20, color: "#45B7D1" },
@@ -22,7 +30,7 @@ export default function DashboardPage() {
     { name: "Kalimantan Selatan", value: 10, color: "#FFEAA7" },
   ];
 
-  const wahanaData = [
+  const wahanaData: ChartDataItem[] = [
     { name: "Museum", value: 30, color: "#FF6B35" },
     { name: "Kereta Gantung", value: 25, color: "#4ECDC4" },
     { name: "Taman Burung", value: 20, color: "#45B7D1" },
@@ -30,146 +38,162 @@ export default function DashboardPage() {
     { name: "Air Mancur", value: 10, color: "#FFEAA7" },
   ];
 
-  const [hoveredSegment, setHoveredSegment] = React.useState<number | null>(
+  // FIXED: Separate hover states for each chart to prevent conflicts
+  const [hoveredAnjungan, setHoveredAnjungan] = React.useState<number | null>(
+    null
+  );
+  const [hoveredWahana, setHoveredWahana] = React.useState<number | null>(
     null
   );
 
-  const renderDonutChart = (data: typeof anjunganData, chartId: string) => {
-    const total = data.reduce((sum, item) => sum + item.value, 0);
-    let currentAngle = 0;
+  // Helper function to get hover state and setter based on chart ID
+  const getHoverState = useCallback(
+    (chartId: ChartId): [number | null, (value: number | null) => void] => {
+      if (chartId === "anjungan") {
+        return [hoveredAnjungan, setHoveredAnjungan];
+      }
+      return [hoveredWahana, setHoveredWahana];
+    },
+    [hoveredAnjungan, hoveredWahana]
+  );
 
-    return (
-      <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
-        {/* Chart */}
-        <div className="relative w-[180px] h-[180px] md:w-[200px] md:h-[200px] flex-shrink-0">
-          <svg
-            viewBox="0 0 200 200"
-            className="w-full h-full transform -rotate-90"
-          >
-            {data.map((item, index) => {
-              const percentage = item.value / total;
-              const angle = percentage * 360;
-              const startAngle = currentAngle;
-              const endAngle = currentAngle + angle;
+  const renderDonutChart = useCallback(
+    (data: ChartDataItem[], chartId: ChartId) => {
+      const total = useMemo(
+        () => data.reduce((sum, item) => sum + item.value, 0),
+        [data]
+      );
 
-              currentAngle = endAngle;
+      const [hoveredSegment, setHoveredSegment] = getHoverState(chartId);
 
-              const startRad = (startAngle * Math.PI) / 180;
-              const endRad = (endAngle * Math.PI) / 180;
+      let currentAngle = 0;
 
-              const x1 = 100 + 80 * Math.cos(startRad);
-              const y1 = 100 + 80 * Math.sin(startRad);
-              const x2 = 100 + 80 * Math.cos(endRad);
-              const y2 = 100 + 80 * Math.sin(endRad);
+      return (
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+          {/* Chart */}
+          <div className="relative w-[180px] h-[180px] md:w-[200px] md:h-[200px] flex-shrink-0">
+            <svg
+              viewBox="0 0 200 200"
+              className="w-full h-full transform -rotate-90"
+            >
+              {data.map((item, index) => {
+                const percentage = item.value / total;
+                const angle = percentage * 360;
+                const startAngle = currentAngle;
+                const endAngle = currentAngle + angle;
 
-              const largeArc = angle > 180 ? 1 : 0;
+                currentAngle = endAngle;
 
-              const pathData = [
-                `M 100 100`,
-                `L ${x1} ${y1}`,
-                `A 80 80 0 ${largeArc} 1 ${x2} ${y2}`,
-                `Z`,
-              ].join(" ");
+                const startRad = (startAngle * Math.PI) / 180;
+                const endRad = (endAngle * Math.PI) / 180;
 
-              const isHovered =
-                hoveredSegment === index + chartId.charCodeAt(0);
+                const x1 = 100 + 80 * Math.cos(startRad);
+                const y1 = 100 + 80 * Math.sin(startRad);
+                const x2 = 100 + 80 * Math.cos(endRad);
+                const y2 = 100 + 80 * Math.sin(endRad);
 
-              return (
-                <g key={index}>
-                  <path
-                    d={pathData}
-                    fill={item.color}
-                    className="transition-all duration-300 cursor-pointer"
+                const largeArc = angle > 180 ? 1 : 0;
+
+                const pathData = [
+                  `M 100 100`,
+                  `L ${x1} ${y1}`,
+                  `A 80 80 0 ${largeArc} 1 ${x2} ${y2}`,
+                  `Z`,
+                ].join(" ");
+
+                // FIXED: Simple index comparison instead of charCode calculation
+                const isHovered = hoveredSegment === index;
+
+                return (
+                  <g key={`${chartId}-segment-${index}`}>
+                    <path
+                      d={pathData}
+                      fill={item.color}
+                      className="transition-all duration-300 cursor-pointer"
+                      style={{
+                        opacity: hoveredSegment !== null && !isHovered ? 0.4 : 1,
+                        transform: isHovered ? "scale(1.05)" : "scale(1)",
+                        transformOrigin: "100px 100px",
+                      }}
+                      onMouseEnter={() => setHoveredSegment(index)}
+                      onMouseLeave={() => setHoveredSegment(null)}
+                      onTouchStart={() => setHoveredSegment(index)}
+                      onTouchEnd={() => setHoveredSegment(null)} // FIXED: Added cleanup
+                    />
+                  </g>
+                );
+              })}
+              <circle cx="100" cy="100" r="50" fill="white" />
+            </svg>
+
+            {/* Center info */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              {hoveredSegment !== null && data[hoveredSegment] ? (
+                <div className="text-center animate-in fade-in zoom-in duration-200">
+                  <div
+                    className="text-xl md:text-2xl font-bold mb-1"
                     style={{
-                      opacity: hoveredSegment !== null && !isHovered ? 0.4 : 1,
-                      transform: isHovered ? "scale(1.05)" : "scale(1)",
-                      transformOrigin: "100px 100px",
+                      color: data[hoveredSegment].color,
                     }}
-                    onMouseEnter={() =>
-                      setHoveredSegment(index + chartId.charCodeAt(0))
-                    }
-                    onMouseLeave={() => setHoveredSegment(null)}
-                    onTouchStart={() =>
-                      setHoveredSegment(index + chartId.charCodeAt(0))
-                    }
+                  >
+                    {data[hoveredSegment].value}%
+                  </div>
+                  <div className="text-[9px] md:text-[10px] text-gray-600 max-w-[65px] md:max-w-[70px] leading-tight">
+                    {data[hoveredSegment].name}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="text-xs md:text-sm font-medium text-gray-400">
+                    Total
+                  </div>
+                  <div className="text-xl md:text-2xl font-bold text-gray-900">
+                    100%
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Legend - Responsive layout */}
+          <div className="w-full md:flex-1 grid grid-cols-2 gap-x-3 gap-y-2 md:gap-x-4">
+            {data.map((item, index) => {
+              const isHovered = hoveredSegment === index;
+              return (
+                <div
+                  key={`${chartId}-legend-${index}`}
+                  className={`flex items-center gap-1.5 md:gap-2 p-1.5 md:p-2 rounded transition-all duration-200 cursor-pointer ${
+                    isHovered ? "bg-gray-50" : ""
+                  } ${hoveredSegment !== null && !isHovered ? "opacity-40" : ""}`}
+                  onMouseEnter={() => setHoveredSegment(index)}
+                  onMouseLeave={() => setHoveredSegment(null)}
+                  onTouchStart={() => setHoveredSegment(index)}
+                  onTouchEnd={() => setHoveredSegment(null)} // FIXED: Added cleanup
+                >
+                  <div
+                    className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: item.color }}
                   />
-                </g>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] md:text-xs text-gray-600 truncate">
+                      {item.name}
+                    </div>
+                    <div
+                      className="text-xs md:text-sm font-bold"
+                      style={{ color: item.color }}
+                    >
+                      {item.value}%
+                    </div>
+                  </div>
+                </div>
               );
             })}
-            <circle cx="100" cy="100" r="50" fill="white" />
-          </svg>
-
-          {/* Center info */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            {hoveredSegment !== null &&
-            data[hoveredSegment - chartId.charCodeAt(0)] ? (
-              <div className="text-center animate-in fade-in zoom-in duration-200">
-                <div
-                  className="text-xl md:text-2xl font-bold mb-1"
-                  style={{
-                    color:
-                    data[hoveredSegment - chartId.charCodeAt(0)].color,
-                  }}
-                >
-                  {data[hoveredSegment - chartId.charCodeAt(0)].value}%
-                </div>
-                <div className="text-[9px] md:text-[10px] text-gray-600 max-w-[65px] md:max-w-[70px] leading-tight">
-                  {data[hoveredSegment - chartId.charCodeAt(0)].name}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center">
-                <div className="text-xs md:text-sm font-medium text-gray-400">
-                  Total
-                </div>
-                <div className="text-xl md:text-2xl font-bold text-gray-900">
-                  100%
-                </div>
-              </div>
-            )}
           </div>
         </div>
-
-        {/* Legend - Responsive layout */}
-        <div className="w-full md:flex-1 grid grid-cols-2 gap-x-3 gap-y-2 md:gap-x-4">
-          {data.map((item, index) => {
-            const isHovered = hoveredSegment === index + chartId.charCodeAt(0);
-            return (
-              <div
-                key={index}
-                className={`flex items-center gap-1.5 md:gap-2 p-1.5 md:p-2 rounded transition-all duration-200 cursor-pointer ${
-                  isHovered ? "bg-gray-50" : ""
-                } ${hoveredSegment !== null && !isHovered ? "opacity-40" : ""}`}
-                onMouseEnter={() =>
-                  setHoveredSegment(index + chartId.charCodeAt(0))
-                }
-                onMouseLeave={() => setHoveredSegment(null)}
-                onTouchStart={() =>
-                  setHoveredSegment(index + chartId.charCodeAt(0))
-                }
-              >
-                <div
-                  className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: item.color }}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] md:text-xs text-gray-600 truncate">
-                    {item.name}
-                  </div>
-                  <div
-                    className="text-xs md:text-sm font-bold"
-                    style={{ color: item.color }}
-                  >
-                    {item.value}%
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
+      );
+    },
+    [getHoverState]
+  );
 
   return (
     <Layout
